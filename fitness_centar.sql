@@ -26,7 +26,7 @@ CREATE TABLE FitnessWorkingTime(
 CREATE TABLE Workouts(
 	WorkoutId INT NOT NULL PRIMARY KEY,
 	WorkoutName VARCHAR(100) NOT NULL,
-	WorkoutType Tip ENUM('Trening snage', 'Kardio', 'Yoga', 'Ples', 'Injury rehabilitation'),
+	WorkoutType Tip ENUM('Trening snage', 'Kardio', 'Yoga', 'Ples', 'Injury rehabilitation')
 );
 
 CREATE TABLE TrainerType(
@@ -36,10 +36,11 @@ CREATE TABLE TrainerType(
 
 CREATE TABLE Trainers(
 	TrainerId INT NOT NULL PRIMARY KEY,
+	FitnessId INT REFERENCES FithessCenter(FitnessId),
 	TrainerName VARCHAR(50) NOT NULL,
 	TrainerLastName VARCHAR(50) NOT NULL,
 	TrainerBDay TIMESTAMP,
-	TrainerSex ENUM('M', 'Ž') NOT NULL,
+	TrainerSex VARCHAR(30),
 	CountryId INT REFERENCES Countries(CountryId)
 );
 
@@ -47,17 +48,20 @@ CREATE TABLE TrainerWorkout(
 	TrainerId INT REFERENCES Trainers(TrainerId),
 	WorkoutId INT REFERENCES Workouts(WorkoutId),
 	TrainerTypeId REFERENCES TrainerType(TrainerTypeId),
+	Time DATETIME NOT NULL
 	PRIMARY KEY (TrainerId, WorkoutId)
-);
-
-CREATE TABLE Schedule(
-    Schedule INT PRIMARY KEY,
-    WorkoutId INT REFERENCES Workouts(WorkoutId),
-    Time DATETIME NOT NULL
 );
 
 CREATE TABLE Users(
 	UserId INT NOT NULL PRIMARY KEY,
 	UserName VARCHAR(50) NOT NULL,
 	UserLastName VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE UserActivity(
+    UserId INT REFERENCES Users(UserId),
+   	TrainerId INT,
+    WorkoutId INT,
+    FOREIGN KEY (TrainerId, WorkoutId) REFERENCES TrainerWorkout (TrainerId, WorkoutId),
+	PRIMARY KEY (UserId, TrainerId, WorkoutId),
 );
