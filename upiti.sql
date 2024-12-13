@@ -11,7 +11,7 @@ CASE
 c.CountryName AS IME_DRZAVE, 
 c.AvgSalary AS PROSJEK_PLACA
 FROM Trainers t
-JOIN Countries c ON c.Id = t.CountryId;
+JOIN Countries c ON c.CountryId = t.CountryId;
 
 
 --2 -> Naziv i termin održavanja svake sportske igre zajedno s 
@@ -20,8 +20,8 @@ SELECT w.WorkoutName,
 T.TrainerLastName || ' ' || SUBSTRING(T.TrainerName, 1, 1) || '.' AS Trainer,
 tw.Time
 FROM Workouts w
-JOIN TrainerWorkout tw ON tw.WorkoutId = w.Id
-JOIN Trainers t ON tw.TrainerId = t.Id
+JOIN TrainerWorkout tw ON tw.WorkoutId = w.WorkoutId
+JOIN Trainers t ON tw.TrainerId = t.TrainerId
 
 
 --3 -> Top 3 fitness centra s najvećim brojem aktivnosti u rasporedu
@@ -47,7 +47,7 @@ CASE
 	ELSE 'POTPUNO ZAUZET'
 	END AS Status
 FROM Trainers t
-JOIN TrainerWorkout tw ON tw.WorkoutId = T.Id
+JOIN TrainerWorkout tw ON tw.WorkoutId = T.TrainerId
 
 
 --5 -> Imena svih članova koji trenutno sudjeluju na nekoj aktivnosti.
@@ -59,15 +59,59 @@ WHERE DATE(tw.Time) = CURRENT_DATE;
 
 
 --6 -> Sve trenere koji su vodili barem jednu aktivnost između 2019. i 2022.
-SELECT * FROM Trainers t
---TABLICA RASPORED UMISTO DA STOJI U trainerworkout
+SELECT t.TrainerName, t.TrainerLastName FROM Trainers t
+JOIN TrainerWorkout tw ON tw.TrainerId = t.TrainerId
+EXTRACT(YEAR FROM tw.Time) BETWEEN 2019 AND 2022;
 
 
+--7 -> Prosječan broj sudjelovanja po tipu aktivnosti po svakoj državi.
+SELECT c.CountryName, w.WorkoutType, ROUND(AVG(ua.UserIdCount), 2) AS Avg_Sudjelovanje
+FROM Countries c
+JOIN Trainers t ON t.CountryId = c.CountryId
+JOIN TrainerWorkout tw ON tw.TrainerId = t.TrainerId
+JOIN Workouts w ON w.WorkoutId = tw.WorkoutId
+LEFT JOIN ( 
+	SELECT WorkoutId, COUNT(UserId) AS UserIdCount
+    FROM UserActivity
+    GROUP BY WorkoutId) ua ON ua.WorkoutId = tw.WorkoutId
+GROUP BY c.CountryName, w.WorkoutType;
 
 
+--8 -> Top 10 država s najvećim brojem sudjelovanja u injury rehabilitation tipu aktivnosti
+SELECT c.CountryName, COUNT(ua.UserId) AS TotalParticipants
+FROM Countries c
+JOIN Trainers t ON t.CountryId = c.CountryId
+JOIN TrainerWorkout tw ON tw.TrainerId = t.TrainerId
+JOIN Workout ON tw.WorkoutId = w.WorkoutId
+JOIN UserActivity ua ON ua.WorkoutId = tw.WorkoutId
+WHERE w.WorkoutType = 'Injury rehabilitation'
+GROUP BY c.CountryName
+ORDER BY TotalParticipants DESC
+LIMIT 10;
 
 
+--9 -> Ako aktivnost nije popunjena, ispiši uz nju “IMA MJESTA”, a ako je popunjena ispiši “POPUNJENO”
+SELECT w.WorkoutName,
+CASE 
+	 WHEN COUNT(*) >= tw.Capacity THEN 'POPUNJENO'
+	 ELSE 'IMA MJESTA'
+	 END
+FROM TrainerWorkout tw
+JOIN UserActivity ua ON ua.WorkoutId = tw.WorkoutId AND ua.TrainerId = tw.TrainerId
+JOIN Workouts w ON w.WorkoutId = tw.WorkoutId
+GROUP BY (tw.TrainerId, tw.WorkoutId);
 
 
-
+--10 -> 10 najplaćenijih trenera, ako po svakoj aktivnosti dobije prihod kao brojSudionika * cijenaPoTerminu
+SELECT t.TrainerName, t.TrainerLastName,SUM(ua.Participants * w.PricePerSession) AS TotalEarnings 
+FROM Trainers t
+JOIN TrainerWorkout tw ON tw.TrainerId = t.TrainerId
+JOIN (
+	SELECT WorkoutId, TrainerId, COUNT(UserId) AS Participants
+    FROM UserActivity
+    GROUP BY WorkoutId, TrainerId
+)
+GROUP BY t.TrainerId
+ORDER BY TotalEarnings DESC
+LIMIT 10;
 

@@ -48,7 +48,9 @@ CREATE TABLE TrainerWorkout(
 	TrainerId INT REFERENCES Trainers(TrainerId),
 	WorkoutId INT REFERENCES Workouts(WorkoutId),
 	TrainerTypeId REFERENCES TrainerType(TrainerTypeId),
-	Time DATETIME NOT NULL
+	Time DATETIME NOT NULL,
+	Capacity INT NOT NULL,
+	Price DECIMAL(2, 2) NOT NULL,
 	PRIMARY KEY (TrainerId, WorkoutId)
 );
 
