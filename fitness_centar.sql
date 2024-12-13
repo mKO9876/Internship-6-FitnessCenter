@@ -50,7 +50,7 @@ CREATE TABLE TrainerWorkout(
 	TrainerTypeId INT REFERENCES TrainerType(TrainerTypeId),
 	Time TIMESTAMP NOT NULL,
 	Capacity INT NOT NULL,
-	Price DECIMAL(2, 2) NOT NULL,
+	Price DECIMAL(4, 2) NOT NULL,
 	PRIMARY KEY (TrainerId, WorkoutId)
 );
 
